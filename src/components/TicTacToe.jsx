@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { winPositions, checkWin } from '../utils/helper';
 
 const style = {
   titleStyle: {
@@ -48,116 +49,90 @@ const style = {
   }
 };
 
+const Box = ({ style, onClick, children }) => {
+  return (
+    <li
+      style={style}
+      onClick={onClick}
+    >{children}</li>
+  )
+}
+
 class TicTacToe extends Component {
   constructor(props) {
     super(props);
-    // CONSIDER: turn the box default state to an object consisting of { value: '', lock: false }
-    // to prevent mutation of already set boxes
+
     this.state = {
-      boxOneValue: '',
-      boxTwoValue: '',
-      boxThreeValue: '',
-      boxFourValue: '',
-      boxFiveValue: '',
-      boxSixValue: '',
-      boxSevenValue: '',
-      boxEightValue: '',
-      boxNineValue: '',
-      win: false,
-      playerSwitch: true
+      box: ['','','','','','','','',''],
+      winner: '',
+      numberOfPlay: 0,
     }
+    this.positionOne = [];
+    this.positionTwo = [];
     this.handleClick = this.handleClick.bind(this);
     this.handleReset = this.handleReset.bind(this);
-    this.setBoxValue = this.setBoxValue.bind(this);
+    this.handleUpdateBoxValues = this.handleUpdateBoxValues.bind(this);
   }
 
   /**
    * Sets the value of the player game data into the selected box 
    * position.
-   * @param {string} boxPosition the selected box position where game data should be inserted
+   * @param {string} currentPosition the selected box position where game data should be inserted
    * @returns {string} 
    * @memberof TicTacToe
    */
-  setBoxValue(boxPosition) {
-    const { playerSwitch } = this.state;
-    const boxPositionInput = `box${boxPosition}Input`;
-    this[boxPositionInput].innerHTML = playerSwitch ? 'X' : 'O';
+  handleUpdateBoxValues(currentPosition) {
+    let boxCopy, boxFilledValue;
+    const { box, playerSwitch, numberOfPlay, winner } = this.state;
+    // let boxFilledValue = numberOfPlay % 2 ? 'X' : 'O';
+    if (numberOfPlay % 2 === 0) {
+      boxFilledValue = 'X';
+      this.positionOne.push(currentPosition);
+    } else {
+      boxFilledValue = 'O';
+      this.positionTwo.push(currentPosition);
+    }
+
+    if (box[currentPosition] || winner) return box;
+
+    if (currentPosition === 0) {
+      boxCopy = [
+        boxFilledValue,
+        ...box.slice(1, box.length),
+      ];
+    } else if (currentPosition === 8) {
+      boxCopy = [
+        ...box.slice(0, currentPosition),
+        boxFilledValue
+      ];
+    } else {
+      boxCopy = [
+        ...box.slice(0, currentPosition),
+        boxFilledValue,
+        ...box.slice(currentPosition + 1, box.length)
+      ];
+    }
     this.setState((prevState, props) => {
       return {
-        playerSwitch: !prevState.playerSwitch
+        box: boxCopy,
+        numberOfPlay: prevState.numberOfPlay + 1
       }
     });
-    return this[boxPositionInput].innerHTML;
   }
 
   /**
    * Handles the click event when the user clicks any of the board positions
-   * @param {string} boxPosition the selected box position where game data should be inserted
+   * @param {string} currentPosition the selected box position where game data should be inserted
    * @returns 
    * @memberof TicTacToe
    */
-  handleClick(boxPosition) {
-    // TODO: Handle the set state in the setBoxValue without another switch statement
-    // TODO: Refactor the handleClick to encapsulate the switch functionality to another function
-    // BLOCKER: Object cannot be given a key with the backticks string interpolation - `${string}`
-    switch(boxPosition) {
-      case 'One':
-        return this.setState((prevState, props) => {
-          return {
-            boxOneValue: this.setBoxValue('One')
-          }
-        }, () => this.handleWin());
-      case 'Two':
-        return this.setState((prevState, props) => {
-          return {
-            boxTwoValue: this.setBoxValue('Two')
-          }
-        }, () => this.handleWin());
-      case 'Three':
-        return this.setState((prevState, props) => {
-          return {
-            boxThreeValue: this.setBoxValue('Three')
-          }
-        }, () => this.handleWin());
-      case 'Four':
-        return this.setState((prevState, props) => {
-          return {
-            boxFourValue: this.setBoxValue('Four')
-          }
-        }, () => this.handleWin());
-      case 'Five':
-        return this.setState((prevState, props) => {
-          return {
-            boxFiveValue: this.setBoxValue('Five')
-          }
-        }, () => this.handleWin());
-      case 'Six':
-        return this.setState((prevState, props) => {
-          return {
-            boxSixValue: this.setBoxValue('Six')
-          }
-        }, () => this.handleWin());
-      case 'Seven':
-        return this.setState((prevState, props) => {
-          return {
-            boxSevenValue: this.setBoxValue('Seven')
-          }
-        }, () => this.handleWin());
-      case 'Eight':
-        return this.setState((prevState, props) => {
-          return {
-            boxEightValue: this.setBoxValue('Eight')
-          }
-        }, () => this.handleWin());
-      case 'Nine':
-        return this.setState((prevState, props) => {
-          return {
-            boxNineValue: this.setBoxValue('Nine')
-          }
-        }, () => this.handleWin());
-      default:
-        return false;
-    }
+  handleClick(currentPosition) {
+    return this.setState((prevState, props) => {
+      return {
+        box: this.handleUpdateBoxValues(currentPosition),
+        position: currentPosition
+      }
+    }, () => { this.handleWin(); });
   }
 
   /**
@@ -165,18 +140,13 @@ class TicTacToe extends Component {
    * @memberof TicTacToe
    */
   handleReset() {
-    this.state.boxOneValue = '';
-    this.state.boxTwoValue = '';
-    this.state.boxThreeValue = '';
-    this.state.boxFourValue = '';
-    this.state.boxFiveValue = '';
-    this.state.boxSixValue = '';
-    this.state.boxSevenValue = '';
-    this.state.boxEightValue = '';
-    this.state.boxNineValue = '';
+    this.positionOne = [];
+    this.positionTwo = [];
     this.setState((prevState, props) => {
       return {
-        win: false
+        winner: '',
+        box: ['','','','','','','','',''],
+        numberOfPlay: 0
       };
     });
   }
@@ -187,123 +157,76 @@ class TicTacToe extends Component {
    * @memberof TicTacToe
    */
   handleWin() {
-    const { 
-      boxOneValue,
-      boxTwoValue,
-      boxThreeValue,
-      boxFourValue,
-      boxFiveValue,
-      boxSixValue,
-      boxSevenValue,
-      boxEightValue,
-      boxNineValue } = this.state;
+    let winner = '';
+    const { numberOfPlay } = this.state;
+    if (Math.ceil(numberOfPlay / 2) < 3) return;
 
-      if((boxOneValue === 'X' && boxTwoValue === 'X' && boxThreeValue === 'X') || (boxOneValue === 'O' && boxTwoValue === 'O' && boxThreeValue === 'O')) {
-        return this.setState((prevState, props) => {
-          return {
-            win: true
-          }
-        });
-      } else if((boxFourValue === 'X' && boxFiveValue === 'X' && boxSixValue === 'X') || (boxFourValue === 'O' && boxFiveValue === 'O' && boxSixValue === 'O')) {
-        return this.setState((prevState, props) => {
-          return {
-            win: true
-          }
-        });
-      } else if((boxSevenValue === 'X' && boxEightValue === 'X' && boxNineValue === 'X') || (boxSevenValue === 'O' && boxEightValue === 'O' && boxNineValue === 'O')) {
-        return this.setState((prevState, props) => {
-          return {
-            win: true
-          }
-        });
-      } else if((boxOneValue === 'X' && boxFourValue === 'X' && boxSevenValue === 'X') || (boxOneValue === 'O' && boxFourValue === 'O' && boxSevenValue === 'O')) {
-        return this.setState((prevState, props) => {
-          return {
-            win: true
-          }
-        });
-      } else if((boxTwoValue === 'X' && boxFiveValue === 'X' && boxEightValue === 'X') || (boxTwoValue === 'O' && boxFiveValue === 'O' && boxEightValue === 'O')) {
-        return this.setState((prevState, props) => {
-          return {
-            win: true
-          }
-        });
-      } else if((boxThreeValue === 'X' && boxSixValue === 'X' && boxNineValue === 'X') || (boxThreeValue === 'O' && boxSixValue === 'O' && boxNineValue === 'O')) {
-        return this.setState((prevState, props) => {
-          return {
-            win: true
-          }
-        });
-      } else if((boxOneValue === 'X' && boxFiveValue === 'X' && boxNineValue === 'X') || (boxOneValue === 'O' && boxFiveValue === 'O' && boxNineValue === 'O')) {
-        return this.setState((prevState, props) => {
-          return {
-            win: true
-          }
-        });
-      } else if((boxThreeValue === 'X' && boxFiveValue === 'X' && boxSevenValue === 'X') || (boxThreeValue === 'O' && boxFiveValue === 'O' && boxSevenValue === 'O')) {
-        return this.setState((prevState, props) => {
-          return {
-            win: true
-          }
-        });
+    if (checkWin(winPositions(), this.positionOne)) {
+      winner = 'PlayerOne'
+    } else if(checkWin(winPositions(), this.positionTwo)) {
+      winner = 'PlayerTwo'
+    }
+    this.setState((prevState, props) => {
+      return {
+        winner
       }
+    });
   }
 
   render() {
-    const { 
-      boxOneValue,
-      boxTwoValue,
-      boxThreeValue,
-      boxFourValue,
-      boxFiveValue,
-      boxSixValue,
-      boxSevenValue,
-      boxEightValue,
-      boxNineValue,
-      win } = this.state;
+    const { box, winner } = this.state;
     return (
       <div className="container">
         <header className="title" style={style.titleStyle}>TIC TAC TOE</header>
         {
-          win && <h2 style={{ textAlign: 'center' }}>You have won the game!</h2>
+          winner && <h2 style={{ textAlign: 'center' }}>{winner} has won the game!</h2>
         }
-        <ul className="dashboard" style={style.dashboardStyle}>
-          <li
+        <ul className="dashboard" style={style.dashboardStyle}> 
+          <Box
+            key={0}
             style={style.cardBoardEven}
-            ref={input => this.boxOneInput = input}
-            onClick={() => this.handleClick('One')}>{boxOneValue}</li>
-          <li
+            onClick={() => this.handleClick(0)}
+          >{box[0]}</Box>
+          <Box
+            key={1}
             style={style.cardBoardOdd}
-            ref={input => this.boxTwoInput = input}
-            onClick={() => this.handleClick('Two')}>{boxTwoValue}</li>
-          <li
+            onClick={() => this.handleClick(1)}
+          >{box[1]}</Box>
+          <Box
+            key={2}
             style={style.cardBoardEven}
-            ref={input => this.boxThreeInput = input}
-            onClick={() => this.handleClick('Three')}>{boxThreeValue}</li>
-          <li
+            onClick={() => this.handleClick(2)}
+          >{box[2]}</Box>
+          <Box
+            key={3}
             style={style.cardBoardOdd}
-            ref={input => this.boxFourInput = input}
-            onClick={() => this.handleClick('Four')}>{boxFourValue}</li>
-          <li
+            onClick={() => this.handleClick(3)}
+          >{box[3]}</Box>
+          <Box
+            key={4}
             style={style.cardBoardEven}
-            ref={input => this.boxFiveInput = input}
-            onClick={() => this.handleClick('Five')}>{boxFiveValue}</li>
-          <li
+            onClick={() => this.handleClick(4)}
+          >{box[4]}</Box>
+          <Box
+            key={5}
             style={style.cardBoardOdd}
-            ref={input => this.boxSixInput = input}
-            onClick={() => this.handleClick('Six')}>{boxSixValue}</li>
-          <li
+            onClick={() => this.handleClick(5)}
+          >{box[5]}</Box>
+          <Box
+            key={6}
             style={style.cardBoardEven}
-            ref={input => this.boxSevenInput = input}
-            onClick={() => this.handleClick('Seven')}>{boxSevenValue}</li>
-          <li
+            onClick={() => this.handleClick(6)}
+          >{box[6]}</Box>
+          <Box
+            key={7}
             style={style.cardBoardOdd}
-            ref={input => this.boxEightInput = input}
-            onClick={() => this.handleClick('Eight')}>{boxEightValue}</li>
-          <li
+            onClick={() => this.handleClick(7)}
+          >{box[7]}</Box>
+          <Box
+            key={8}
             style={style.cardBoardEven}
-            ref={input => this.boxNineInput = input}
-            onClick={() => this.handleClick('Nine')}>{boxNineValue}</li>
+            onClick={() => this.handleClick(8)}
+          >{box[8]}</Box>
         </ul>
         <button
           style={style.resetBtn}
